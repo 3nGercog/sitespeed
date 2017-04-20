@@ -3,7 +3,6 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.Title - SiteSpeed</title>
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
 
@@ -14,7 +13,20 @@
                 <span class="sr-only">70% Complete</span>
             </div>
         </div>
-    <div class="container body-content">
+        <div class="container body-content">
+            <form id="uriHtml5Form" name="formsub" class="form-horizontal" action="/SiteNodes/Create" method="post">
+
+                <div class="form-group">
+                    <label class="col-xs-3 control-label">Your website</label>
+                    <div class="col-xs-6">
+                        <input class="form-control" name="website"
+                               type="url"/>
+                    </div>
+                    <div class="col-xs-3">
+                        <input type="submit" class="btn btn-info form-control" value="Submit">
+                    </div>
+                </div>
+            </form>
         @RenderBody()
         <hr />
         <footer>
@@ -23,7 +35,29 @@
     </div>
 
     @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/jqueryval")
     @Scripts.Render("~/bundles/bootstrap")
     @RenderSection("scripts", required: false)
+
+    <script>
+        $(document).ready(function () {
+            $('form[name="submit"]').validate({
+                rules: {
+                    website: {
+                        url: true,
+                        required: true,
+                        minlength: 5
+                    }
+                },
+                submitHandler: function(form) {
+                    form.submit();
+                }
+            });
+        });
+        //$(document).on('click', 'input[type="submit"]', function () {
+        //    console.log('sub bt');
+            
+        //});
+    </script>
 </body>
 </html>
