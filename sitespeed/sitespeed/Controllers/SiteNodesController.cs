@@ -8,24 +8,35 @@ using System.Text;
 using System.Web;
 using System.Web.Mvc;
 using System.Xml.Linq;
+using Newtonsoft.Json;
+using System.Net;
+using System.IO;
 
 namespace sitespeed.Controllers
 {
     public class SiteNodesController : Controller
     {
         List<SitemapNode> sitenodes = new List<SitemapNode>();
+        List<History> history = new List<History>();
         // GET: SiteNodes
         public ActionResult Index()
         {
-            var history = new List<History>();
-            foreach (var item in sitenodes)
+            string fpath = Server.MapPath("~/App_Data/somedata.json");
+            if (!System.IO.File.Exists(fpath))
             {
-                history.Add(new History()
-                {
-                    SiteNode = item
-                });
+                return View();
             }
-            ViewData = new ViewDataDictionary(history);
+            using (StreamReader sr = System.IO.File.OpenText(fpath))
+            {
+                string s = "";
+                while ((s = sr.ReadLine()) != null)
+                {
+                    Debug.WriteLine(s);
+                    var h = JsonConvert.DeserializeObject<History>(s);
+                    history.Add(h);
+                }
+            }
+            ViewData = new ViewDataDictionary(history.OrderBy(h => h.Time));
             return View();
         }
 
@@ -38,7 +49,7 @@ namespace sitespeed.Controllers
         // GET: SiteNodes/Create
         public ActionResult Create()
         {
-            return View();
+            return RedirectToAction("Index");
         }
 
         // POST: SiteNodes/Create
@@ -48,10 +59,47 @@ namespace sitespeed.Controllers
             try
             {
                 // TODO: Add insert logic here
-                this.AddSitemapNodes(collection[0]);
-                //string xml = GetSitemapDocument(sitenodes);
-                //return this.Content(xml, "xml", Encoding.UTF8);
-                Debug.Write(collection[0]);
+                var url = collection[0];
+                if(String.IsNullOrEmpty(url))
+                    return RedirectToAction("Index");
+
+                string fpath = Server.MapPath("~/App_Data/somedata.json");
+                sitenodes.Add(new SitemapNode()
+                {
+                    Url = url,
+                    Priority = 1,
+                    LastModified = DateTime.Now,
+                    Frequency = SitemapFrequency.Always
+                });
+                string xml = GetSitemapDocument(sitenodes);
+                for (int i = 0; i < 5; i++)
+                {
+                    var time = this.CalcSpeed(url);
+                    var sthist = new History()
+                    {
+                        SiteNode = new SitemapNode()
+                        {
+                            Url = url,
+                            Priority = 1,
+                            LastModified = DateTime.Now,
+                            Frequency = SitemapFrequency.Always
+                        },
+                        Time = time,
+                        Xml = xml
+                    };
+                    var str = JsonConvert.SerializeObject(sthist);
+                    if (!System.IO.File.Exists(fpath))
+                    {
+                        using (StreamWriter sw = System.IO.File.CreateText(fpath))
+                        {
+                            sw.WriteLine(str);
+                        }
+                    }
+                    using (StreamWriter sw = System.IO.File.AppendText(fpath))
+                    {
+                        sw.WriteLine(str);
+                    }
+                }
                 return RedirectToAction("Index");
             }
             catch
@@ -59,17 +107,18 @@ namespace sitespeed.Controllers
                 return View();
             }
         }
-
-        public void AddSitemapNodes(string urlHelper)
+        public TimeSpan CalcSpeed(string url)
         {
-            sitenodes.Add(
-                new SitemapNode()
-                {
-                    Url = urlHelper,
-                    Priority = 1
-                });
+            WebClient wc = new WebClient();
+            DateTime dt1 = DateTime.Now;
+            var st = new Stopwatch();
+            st.Start();
+            byte[] data = wc.DownloadData(url);
+            st.Stop();
+            DateTime dt2 = DateTime.Now;
+            //return (dt2 - dt1).TotalSeconds;
+            return st.Elapsed;
         }
-
         public string GetSitemapDocument(List<SitemapNode> sitemapNodes)
         {
             XNamespace xmlns = "http://www.sitemaps.org/schemas/sitemap/0.9";

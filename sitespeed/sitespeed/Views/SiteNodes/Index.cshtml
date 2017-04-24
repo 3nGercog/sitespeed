@@ -4,4 +4,16 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
+<table class="table-bordered tb">
+    @foreach (var item in ViewData.Model)
+    {
 
+        <tr>
+            <td>@item.SiteNode.Url</td>
+            <td>@item.Time</td>
+            <td>@item.Xml</td>
+        </tr>
+
+
+    }
+</table>

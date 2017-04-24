@@ -9,5 +9,7 @@ namespace sitespeed.Models
     {
         public SitemapNode SiteNode { get; set; }
         public TimeSpan Time { get; set; }
+
+        public string Xml { get; set; }
     }
 }
