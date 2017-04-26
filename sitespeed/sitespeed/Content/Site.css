@@ -18,6 +18,9 @@
 .tb tr{
     height: 70px;
 }
+.tb tr td{
+    padding: 0px 4px;
+}
 /* Override the default bootstrap behavior where horizontal description lists 
    will truncate terms that are too long to fit in the left column 
 */

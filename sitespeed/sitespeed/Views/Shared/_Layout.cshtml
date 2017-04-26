@@ -4,7 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     @Styles.Render("~/Content/css")
+    @Styles.Render("~/bundles/jsxcss")
     @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/jsxjs")
 
 </head>
 <body>
@@ -14,7 +16,7 @@
             </div>
         </div>
         <div class="container body-content">
-            <form id="uriHtml5Form" name="formsub" class="form-horizontal" action="/SiteNodes/Create" method="post">
+            <form id="uriHtml5Form" name="formsub" class="form-horizontal" action="/Home/Create" method="post">
 
                 <div class="form-group">
                     <label class="col-xs-3 control-label">Your website</label>
@@ -38,7 +40,30 @@
     @Scripts.Render("~/bundles/jqueryval")
     @Scripts.Render("~/bundles/bootstrap")
     @RenderSection("scripts", required: false)
+    <script type="text/javascript">
+    function creareCharts() {
+        var arr = @Html.Raw(Json.Encode(ViewData.Model));
 
+        if(!arr || arr.length === 0){
+            $('#box').removeClass('jxgbox');
+            return;
+        }
+        var board = JXG.JSXGraph.initBoard('box', { boundingbox: [-1, 10, 10, -1], axis: true });
+        var dataArr = [4, 1, 3, 2, 5, 7, 1.5, 2];
+        var dataArr2 = [3, 2, 3, 2, 6, 9, 3.5, 4];
+        JXG.JSXGraph.freeBoard(board);
+        board = JXG.JSXGraph.initBoard('box', { boundingbox: [-1, 10, 11, -1], axis: true });
+        board.suspendUpdate();
+        var arrData = [];
+        for (var i = 0; i < arr.length; i++) {
+            console.log(arr[i].SiteNode.Url);
+        }
+        var a = board.create('chart', dataArr, { chartStyle: 'spline', strokeWidth: 4, name: 'name 1', strokeColor: '#0000ff' });
+        var b = board.create('chart', dataArr2, { chartStyle: 'spline', strokeWidth: 4, name: 'name 2', strokeColor: '#000000' });
+        board.unsuspendUpdate();
+    }
+    creareCharts();
+    </script>
     <script>
         $(document).ready(function () {
             $('form[name="submit"]').validate({

@@ -8,6 +8,8 @@ namespace sitespeed
         // For more information on bundling, visit http://go.microsoft.com/fwlink/?LinkId=301862
         public static void RegisterBundles(BundleCollection bundles)
         {
+            BundleTable.EnableOptimizations = true;
+            bundles.UseCdn = true;
             bundles.Add(new ScriptBundle("~/bundles/jquery").Include(
                         "~/Scripts/jquery-{version}.js"));
 
@@ -26,6 +28,12 @@ namespace sitespeed
             bundles.Add(new StyleBundle("~/Content/css").Include(
                       "~/Content/bootstrap.css",
                       "~/Content/site.css"));
+
+            bundles.Add(new ScriptBundle("~/bundles/jsxjs", "http://jsxgraph.uni-bayreuth.de/distrib/jsxgraphcore.js").Include(
+                     "~/Scripts/jsxscript.js"
+                ));
+            bundles.Add(new StyleBundle("~/bundles/jsxcss", "http://jsxgraph.uni-bayreuth.de/distrib/jsxgraph.css").Include(
+                "~/Content/jsxstyle.css"));
         }
     }
 }
