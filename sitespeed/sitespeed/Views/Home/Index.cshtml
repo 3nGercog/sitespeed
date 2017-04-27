@@ -1,13 +1,15 @@
 ﻿@{
     ViewBag.Title = "Site Speed";
 }
-
+@{
+    List<sitespeed.Models.History> hist = (List<sitespeed.Models.History>)ViewData["table"];
+}
 
 
 <div id="box" class="jxgbox" style="width:100%; height:500px; margin-bottom: 20px;"></div>
 
 <table class="table-bordered tb">
-    @foreach (var item in ViewData.Model)
+    @foreach (var item in hist)
     {
 
         <tr>
@@ -15,8 +17,6 @@
             <td>@item.Time</td>
             <td>@item.Xml</td>
         </tr>
-
-
     }
 </table>
 

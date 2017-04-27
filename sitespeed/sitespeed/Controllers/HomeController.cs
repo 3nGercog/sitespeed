@@ -30,10 +30,10 @@ namespace sitespeed.Controllers
     }
     public class HomeController : Controller
     {
-        List<SitemapNode> sitenodes = new List<SitemapNode>();
-        List<History> history = new List<History>();
+
         public ActionResult Index()
         {
+            List<History> history = new List<History>();
             string fpath = Server.MapPath("~/App_Data/somedata.json");
             if (!System.IO.File.Exists(fpath))
             {
@@ -41,15 +41,24 @@ namespace sitespeed.Controllers
             }
             using (StreamReader sr = System.IO.File.OpenText(fpath))
             {
-                string s = "";
+                string s = ""; History h;
                 while ((s = sr.ReadLine()) != null)
                 {
                     Debug.WriteLine(s);
-                    var h = JsonConvert.DeserializeObject<History>(s);
+                    h = JsonConvert.DeserializeObject<History>(s);
                     history.Add(h);
                 }
             }
-            ViewData = new ViewDataDictionary(history.OrderBy(h => h.Time));
+            var grafs = history.OrderBy(h => h.SiteNode.Url).ThenBy(h => h.Time).ToList();
+            var tables = history.OrderBy(h => h.Time).Skip(0).Take(20).ToList();
+            ViewData["graf"] = grafs;
+            ViewData["table"] = tables;
+            return View();
+        }
+
+        public ActionResult Next(string query, int startIndex, int pageSize)
+        {
+            //var page = source.Skip(startIndex).Take(pageSize);
             return View();
         }
 
@@ -70,6 +79,7 @@ namespace sitespeed.Controllers
                     return RedirectToAction("Index");
 
                 string fpath = Server.MapPath("~/App_Data/somedata.json");
+                List<SitemapNode> sitenodes = new List<SitemapNode>();
                 sitenodes.Add(new SitemapNode()
                 {
                     Url = url,
