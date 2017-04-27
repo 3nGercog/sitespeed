@@ -115,7 +115,7 @@ namespace sitespeed.Controllers
             }
         }
 
-        public TimeSpan CalcSpeed(string url)
+        public string CalcSpeed(string url)
         {
             WebClient wc = new WebClient();
             DateTime dt1 = DateTime.Now;
@@ -125,7 +125,7 @@ namespace sitespeed.Controllers
             st.Stop();
             DateTime dt2 = DateTime.Now;
             //return (dt2 - dt1).TotalSeconds;
-            return st.Elapsed;
+            return String.Format("{0}.{1}", st.Elapsed.Seconds.ToString(), st.Elapsed.Milliseconds.ToString());
         }
         public string GetSitemapDocument(List<SitemapNode> sitemapNodes)
         {

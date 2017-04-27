@@ -41,28 +41,79 @@
     @Scripts.Render("~/bundles/bootstrap")
     @RenderSection("scripts", required: false)
     <script type="text/javascript">
-    function creareCharts() {
-        var arr = @Html.Raw(Json.Encode(ViewData.Model));
+        function getRandomColor() {
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            for (var i = 0; i < 6; i++ ) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+        function splitTo( arr, n) {
+            var plen = Math.ceil(arr.length / n);
 
-        if(!arr || arr.length === 0){
-            $('#box').removeClass('jxgbox');
-            return;
+            return arr.reduce( function( p, c, i, a) {
+                if(i%plen === 0) p.push({});
+                p[p.length-1][i] = c;
+                return p;
+            }, []);
         }
-        var board = JXG.JSXGraph.initBoard('box', { boundingbox: [-1, 10, 10, -1], axis: true });
-        var dataArr = [4, 1, 3, 2, 5, 7, 1.5, 2];
-        var dataArr2 = [3, 2, 3, 2, 6, 9, 3.5, 4];
-        JXG.JSXGraph.freeBoard(board);
-        board = JXG.JSXGraph.initBoard('box', { boundingbox: [-1, 10, 11, -1], axis: true });
-        board.suspendUpdate();
-        var arrData = [];
-        for (var i = 0; i < arr.length; i++) {
-            console.log(arr[i].SiteNode.Url);
+        function compareMyArr(a, b){
+            if (a.Number > b.Number) return 1;
+            if (a.Number < b.Number) return -1;
         }
-        var a = board.create('chart', dataArr, { chartStyle: 'spline', strokeWidth: 4, name: 'name 1', strokeColor: '#0000ff' });
-        var b = board.create('chart', dataArr2, { chartStyle: 'spline', strokeWidth: 4, name: 'name 2', strokeColor: '#000000' });
-        board.unsuspendUpdate();
-    }
-    creareCharts();
+        function creareCharts() {
+            var arr = @Html.Raw(Json.Encode(ViewData.Model));
+
+            if(!arr || arr.length === 0){
+                $('#box').removeClass('jxgbox');
+                return;
+            }
+            // get random color
+            //create text
+            //create graf
+            var board = JXG.JSXGraph.initBoard('box', { boundingbox: [-1, 10, 10, -1], axis: true });
+            var dataArr = [4, 1, 3, 2, 5, 7, 1.5, 2];
+            var dataArr2 = [3, 2, 3, 2, 6, 9, 3.5, 4];
+            JXG.JSXGraph.freeBoard(board);
+            board = JXG.JSXGraph.initBoard('box', { boundingbox: [-1, 5, 11, -1], axis: true });
+            board.suspendUpdate();
+            var arrData = [];
+            var ind = 0;
+            var colS = arr.length / 5;
+            var res = colS === 1 ? arr : splitTo(arr, colS);
+            var sortArr = [];
+            if(colS === 1){
+                var col = getRandomColor();
+                for (var i = 0; i < res.length; i++) {
+                    for (var n = 0; n < res.length; n++) {
+                        if(res[i].Number === res[n].Number){
+                            sortArr.push(parseFloat(res[n].Time));
+                        }
+                    }
+                }
+                var a = board.create('chart', sortArr, { chartStyle: 'line, point', strokeWidth: 1, name: 'name 1', strokeColor: col });
+            }
+            else{
+                var col; var b;
+                for (var i = 0; i < res.length; i++) {
+                    //console.log(res[i]);
+                    $.each(res[i], function(ind, val){
+                        $.each(res[i], function(i,v){
+                            if(val.Number === v.Number){
+                                sortArr.push(parseFloat(v.Time));
+                            }
+                        });
+                    });
+                    col = getRandomColor();
+                    b = board.create('chart', sortArr, { chartStyle: 'line, point', strokeWidth: 1, name: 'name 1', strokeColor: col });
+                    sortArr = [];
+                }
+            }
+           
+            board.unsuspendUpdate();
+        }
+        creareCharts();
     </script>
     <script>
         $(document).ready(function () {
