@@ -56,10 +56,29 @@ namespace sitespeed.Controllers
             return View();
         }
 
-        public ActionResult Next(string query, int startIndex, int pageSize)
+        [HttpPost]
+        public PartialViewResult Next(string query, int startIndex, int pageSize)
         {
+            List<History> history = new List<History>();
+            string fpath = Server.MapPath("~/App_Data/somedata.json");
+            if (!System.IO.File.Exists(fpath))
+            {
+                return PartialView("_TableView");
+            }
+            using (StreamReader sr = System.IO.File.OpenText(fpath))
+            {
+                string s = ""; History h;
+                while ((s = sr.ReadLine()) != null)
+                {
+                    Debug.WriteLine(s);
+                    h = JsonConvert.DeserializeObject<History>(s);
+                    history.Add(h);
+                }
+            }
+            var tables = history.OrderBy(h => h.Time).Skip(startIndex).Take(pageSize).ToList();
+            ViewData["table"] = tables;
             //var page = source.Skip(startIndex).Take(pageSize);
-            return View();
+            return PartialView("_TableView");
         }
 
         public ActionResult Create()

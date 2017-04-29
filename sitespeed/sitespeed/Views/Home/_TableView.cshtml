@@ -1,0 +1,22 @@
+﻿@{
+    List<sitespeed.Models.History> hist = (List<sitespeed.Models.History>)ViewData["table"];
+}
+<table class="table-bordered tb">
+    @if (hist.Count > 0)
+    {
+        <tr>
+            <th class="text-center">URL</th>
+            <th class="text-center">Time</th>
+            <th class="text-center">Xml site map</th>
+        </tr>
+    }
+    @foreach (var item in hist)
+    {
+
+        <tr>
+            <td>@item.SiteNode.Url</td>
+            <td>@item.Time</td>
+            <td>@item.Xml</td>
+        </tr>
+    }
+</table>
