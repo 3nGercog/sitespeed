@@ -50,7 +50,7 @@ namespace sitespeed.Controllers
                 }
             }
             var grafs = history.OrderBy(h => h.SiteNode.Url).ThenBy(h => h.Time).ToList();
-            var tables = history.OrderBy(h => h.Time).Skip(0).Take(20).ToList();
+            var tables = history.OrderBy(h => h.SiteNode.Url).ThenBy(h => h.Time).Skip(0).Take(20).ToList();
             ViewData["graf"] = grafs;
             ViewData["table"] = tables;
             return View();
@@ -75,7 +75,7 @@ namespace sitespeed.Controllers
                     history.Add(h);
                 }
             }
-            var tables = history.OrderBy(h => h.Time).Skip(startIndex).Take(pageSize).ToList();
+            var tables = history.OrderBy(h => h.SiteNode.Url).ThenBy(h => h.Time).Skip(startIndex).Take(pageSize).ToList();
             ViewData["table"] = tables;
             //var page = source.Skip(startIndex).Take(pageSize);
             return PartialView("_TableView");
@@ -97,6 +97,11 @@ namespace sitespeed.Controllers
                 if (String.IsNullOrEmpty(url))
                     return RedirectToAction("Index");
 
+                Uri nUrl = new Uri(url);
+                using (Worker w = new Worker(nUrl))
+                {
+                    w.Work();
+                }
                 string fpath = Server.MapPath("~/App_Data/somedata.json");
                 List<SitemapNode> sitenodes = new List<SitemapNode>();
                 sitenodes.Add(new SitemapNode()
@@ -107,6 +112,7 @@ namespace sitespeed.Controllers
                     Frequency = SitemapFrequency.Always
                 });
                 string xml = GetSitemapDocument(sitenodes);
+                
                 for (int i = 0; i < 5; i++)
                 {
                     var time = this.CalcSpeed(url);
@@ -140,12 +146,13 @@ namespace sitespeed.Controllers
             }
             catch
             {
-                return View();
+                return RedirectToAction("Index"); ;
             }
         }
 
         public string CalcSpeed(string url)
         {
+            
             WebClient wc = new WebClient();
             DateTime dt1 = DateTime.Now;
             var st = new Stopwatch();
