@@ -65,7 +65,7 @@
         }
         function creareCharts() {
             @{
-                List<sitespeed.Models.History> hst = (List<sitespeed.Models.History>)ViewData["graf"];
+                List<sitespeed.ViewModel.HistoryViewModel> hst = (List<sitespeed.ViewModel.HistoryViewModel>)ViewData["graf"];
              }
             var arr = @Html.Raw(Json.Encode(hst));
 
@@ -84,28 +84,15 @@
             var arrData = [];
             var ind = 0;
             var colS = arr.length / 5;
-            var res = colS === 1 ? arr : splitTo(arr, colS);
+            var res;
             var sortArr = []; var name;
-            if(colS === 1){
-                var col = getRandomColor();
-                for (var i = 0; i < res.length; i++) {
-                    for (var n = 0; n < res.length; n++) {
-                        if(res[i].Number === res[n].Number){
-                            sortArr.push(parseFloat(res[n].Time));
-                            name = res[n].SiteNode.Url;
-                        }
-                    }
-                }
-                var a = board.create('chart', sortArr, { chartStyle: 'line, point', strokeWidth: 1, name: 'name 1', strokeColor: col });
-                var ot = board.createElement('text', [-1, max, name], {fixed:true});
-                var p = board.create('point', [-1.5, max], {style: JXG.POINT_STYLE_X, strokeColor: col, fillColor: col});
-            }
-            else{
+            for (var a = 0; a < arr.length; a++) {
+                res = arr[a].Historys;
                 var col; var b; var ot; var p;
-                for (var i = 0; i < res.length; i++) {
+
                     //console.log(res[i]);
-                    $.each(res[i], function(ind, val){
-                        $.each(res[i], function(i,v){
+                    $.each(res, function(ind, val){
+                        $.each(res, function(i,v){
                             if(val.Number === v.Number){
                                 sortArr.push(parseFloat(v.Time));
                                 name = v.SiteNode.Url;
@@ -117,9 +104,8 @@
                     p = board.create('point', [-1.5, max], {style: JXG.POINT_STYLE_X, strokeColor: col, fillColor: col});
                     ot = board.createElement('text', [-1, max--, name], {fixed:true});
                     sortArr = [];
-                }
+                
             }
-           
             board.unsuspendUpdate();
         }
         creareCharts();

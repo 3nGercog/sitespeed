@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using sitespeed.Models;
+using sitespeed.ViewModel;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -49,7 +50,7 @@ namespace sitespeed.Controllers
                     history.Add(h);
                 }
             }
-            var grafs = history.OrderBy(h => h.SiteNode.Url).ThenBy(h => h.Time).ToList();
+            var grafs = history.GroupBy(h => h.SiteNode.Url).Select(h => new HistoryViewModel() { Url = h.Key, Historys = h.Select(s => s).ToList() }).ToList();
             var tables = history.OrderBy(h => h.SiteNode.Url).ThenBy(h => h.Time).Skip(0).Take(20).ToList();
             ViewData["graf"] = grafs;
             ViewData["table"] = tables;
@@ -90,6 +91,7 @@ namespace sitespeed.Controllers
         [HttpPost]
         public ActionResult Create(FormCollection collection)
         {
+            string fpath = Server.MapPath("~/App_Data/somedata.json");
             try
             {
                 // TODO: Add insert logic here
@@ -97,59 +99,70 @@ namespace sitespeed.Controllers
                 if (String.IsNullOrEmpty(url))
                     return RedirectToAction("Index");
 
-                Uri nUrl = new Uri(url);
+                Uri nUrl = new Uri(url);             
                 using (Worker w = new Worker(nUrl))
                 {
                     w.Work();
-                }
-                string fpath = Server.MapPath("~/App_Data/somedata.json");
-                List<SitemapNode> sitenodes = new List<SitemapNode>();
-                sitenodes.Add(new SitemapNode()
-                {
-                    Url = url,
-                    Priority = 1,
-                    LastModified = DateTime.Now,
-                    Frequency = SitemapFrequency.Always
-                });
-                string xml = GetSitemapDocument(sitenodes);
-                
-                for (int i = 0; i < 5; i++)
-                {
-                    var time = this.CalcSpeed(url);
-                    var sthist = new History()
+                    foreach (KeyValuePair<int, string> kvp in w.Timing)
                     {
-                        SiteNode = new SitemapNode()
+                        var sthist = new History()
                         {
-                            Url = url,
-                            Priority = 1,
-                            LastModified = DateTime.Now,
-                            Frequency = SitemapFrequency.Always
-                        },
-                        Time = time,
-                        Number = i,
-                        Xml = xml
-                    };
-                    var str = JsonConvert.SerializeObject(sthist);
-                    if (!System.IO.File.Exists(fpath))
-                    {
-                        using (StreamWriter sw = System.IO.File.CreateText(fpath))
-                        {
-                            sw.WriteLine(str);
-                        }
-                    }
-                    using (StreamWriter sw = System.IO.File.AppendText(fpath))
-                    {
-                        sw.WriteLine(str);
+                            SiteNode = new SitemapNode()
+                            {
+                                Url = url,
+                                Priority = 1,
+                                LastModified = DateTime.Now,
+                                Frequency = SitemapFrequency.Always
+                            },
+                            Time = kvp.Value,
+                            Number = kvp.Key
+                        };
+                        var str = JsonConvert.SerializeObject(sthist);
+                        this.SaveFile(fpath, str);
                     }
                 }
                 return RedirectToAction("Index");
             }
             catch
             {
+                Uri u = new Uri(collection[0]);
+                var exU = string.Format("{0}://{1}", u.Scheme, u.Host);
+                var time = "";
+                for (int i = 0; i < 5; i++)
+                {
+                    time = this.CalcSpeed(exU);
+                    var sthist = new History()
+                    {
+                        SiteNode = new SitemapNode()
+                        {
+                            Url = exU,
+                            Priority = 1,
+                            LastModified = DateTime.Now,
+                            Frequency = SitemapFrequency.Always
+                        },
+                        Time = time,
+                        Number = i
+                    };
+                    var str = JsonConvert.SerializeObject(sthist);
+                    this.SaveFile(fpath, str);
+                }
                 return RedirectToAction("Index"); ;
             }
         }
-
+        void SaveFile(string path, string text)
+        {
+            if (!System.IO.File.Exists(path))
+            {
+                using (StreamWriter sw = System.IO.File.CreateText(path))
+                {
+                    sw.WriteLine(text);
+                }
+            }
+            using (StreamWriter sw = System.IO.File.AppendText(path))
+            {
+                sw.WriteLine(text);
+            }
+        }
         public string CalcSpeed(string url)
         {
             
@@ -163,29 +176,7 @@ namespace sitespeed.Controllers
             //return (dt2 - dt1).TotalSeconds;
             return String.Format("{0}.{1}", st.Elapsed.Seconds.ToString(), st.Elapsed.Milliseconds.ToString());
         }
-        public string GetSitemapDocument(List<SitemapNode> sitemapNodes)
-        {
-            XNamespace xmlns = "http://www.sitemaps.org/schemas/sitemap/0.9";
-            XElement root = new XElement(xmlns + "urlset");
-            foreach (SitemapNode sitemapNode in sitemapNodes)
-            {
-                XElement urlElement = new XElement(
-                    xmlns + "url",
-                    new XElement(xmlns + "loc", Uri.EscapeUriString(sitemapNode.Url)),
-                    sitemapNode.LastModified == null ? null : new XElement(
-                        xmlns + "lastmod",
-                        sitemapNode.LastModified.Value.ToLocalTime().ToString("yyyy-MM-ddTHH:mm:sszzz")),
-                    sitemapNode.Frequency == null ? null : new XElement(
-                        xmlns + "changefreq",
-                        sitemapNode.Frequency.Value.ToString().ToLowerInvariant()),
-                    sitemapNode.Priority == null ? null : new XElement(
-                        xmlns + "priority",
-                        sitemapNode.Priority.Value.ToString("F1", CultureInfo.InvariantCulture)));
-                root.Add(urlElement);
-            }
-            XDocument document = new XDocument(root);
-            return document.ToString();
-        }
+
 
         protected string GetUrl(object routeValues)
         {

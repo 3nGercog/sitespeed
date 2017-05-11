@@ -1,7 +1,7 @@
 ﻿@{
     ViewBag.Title = "Site Speed";
 }
-
+@using sitespeed.ViewModel;
 
 
 <div id="box" class="jxgbox" style="width:100%; height:500px; margin-bottom: 20px;"></div>
@@ -12,10 +12,16 @@
 
 <ul  class="pager">
     @{
-        List<sitespeed.Models.History> hst = (List<sitespeed.Models.History>)ViewData["graf"];
+        List<sitespeed.ViewModel.HistoryViewModel> hst = (List<sitespeed.ViewModel.HistoryViewModel>)ViewData["graf"];
         int count = 1;
+        int allCount = 0;
+        for (int i = 0; i < hst.Count; i++)
+        {
+            allCount += hst[i].Historys.Count;
+        }
+
     }
-    @for (int i = 0; i < hst.Count; i = i + 20)
+    @for (int i = 0; i < allCount; i = i + 20)
     {
         <li>@Ajax.ActionLink(count++.ToString(), "Next",new { query = "next", startIndex = i, pageSize = 20 }, new AjaxOptions { HttpMethod = "POST", InsertionMode = InsertionMode.Replace, UpdateTargetId = "urltable" })</li>
     }
