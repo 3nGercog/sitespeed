@@ -50,7 +50,7 @@ namespace sitespeed.Controllers
                     history.Add(h);
                 }
             }
-            var grafs = history.GroupBy(h => h.SiteNode.Url).Select(h => new HistoryViewModel() { Url = h.Key, Historys = h.Select(s => s).ToList() }).ToList();
+            var grafs = history.GroupBy(h => h.SiteNode.Url).Select(h => new HistoryViewModel() { Url = h.Key, Historys = h.OrderBy(s => s.Time).ToList() }).ToList();
             var tables = history.OrderBy(h => h.SiteNode.Url).ThenBy(h => h.Time).Skip(0).Take(20).ToList();
             ViewData["graf"] = grafs;
             ViewData["table"] = tables;
@@ -146,7 +146,7 @@ namespace sitespeed.Controllers
                     var str = JsonConvert.SerializeObject(sthist);
                     this.SaveFile(fpath, str);
                 }
-                return RedirectToAction("Index"); ;
+                return RedirectToAction("Index");
             }
         }
         void SaveFile(string path, string text)
