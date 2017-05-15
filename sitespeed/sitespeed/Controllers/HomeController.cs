@@ -50,8 +50,8 @@ namespace sitespeed.Controllers
                     history.Add(h);
                 }
             }
-            var grafs = history.GroupBy(h => h.SiteNode.Url).Select(h => new HistoryViewModel() { Url = h.Key, Historys = h.OrderBy(s => s.Time).ToList() }).ToList();
-            var tables = history.OrderBy(h => h.SiteNode.Url).ThenBy(h => h.Time).Skip(0).Take(20).ToList();
+            var grafs = history.GroupBy(h => h.UrlHost).Select(h => new HistoryViewModel() { Url = h.Key, Historys = h.OrderBy(s => s.Time).ToList() }).ToList();
+            var tables = history.OrderBy(h => h.UrlHost).ThenBy(h => h.Time).Skip(0).Take(20).ToList();
             ViewData["graf"] = grafs;
             ViewData["table"] = tables;
             return View();
@@ -76,7 +76,7 @@ namespace sitespeed.Controllers
                     history.Add(h);
                 }
             }
-            var tables = history.OrderBy(h => h.SiteNode.Url).ThenBy(h => h.Time).Skip(startIndex).Take(pageSize).ToList();
+            var tables = history.OrderBy(h => h.UrlHost).ThenBy(h => h.Time).Skip(startIndex).Take(pageSize).ToList();
             ViewData["table"] = tables;
             //var page = source.Skip(startIndex).Take(pageSize);
             return PartialView("_TableView");
@@ -103,19 +103,22 @@ namespace sitespeed.Controllers
                 using (Worker w = new Worker(nUrl))
                 {
                     w.Work();
-                    foreach (KeyValuePair<int, string> kvp in w.Timing)
+                    var sortedList = w.GetSortedList();
+                    var count = 0;
+                    foreach (KeyValuePair<string, string> kvp in sortedList)
                     {
                         var sthist = new History()
                         {
+                            UrlHost = url,
                             SiteNode = new SitemapNode()
                             {
-                                Url = url,
+                                Url = kvp.Key,
                                 Priority = 1,
                                 LastModified = DateTime.Now,
                                 Frequency = SitemapFrequency.Always
                             },
                             Time = kvp.Value,
-                            Number = kvp.Key
+                            Number = count++
                         };
                         var str = JsonConvert.SerializeObject(sthist);
                         this.SaveFile(fpath, str);
@@ -133,6 +136,7 @@ namespace sitespeed.Controllers
                     time = this.CalcSpeed(exU);
                     var sthist = new History()
                     {
+                        UrlHost = exU,
                         SiteNode = new SitemapNode()
                         {
                             Url = exU,

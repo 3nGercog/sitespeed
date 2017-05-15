@@ -18,17 +18,18 @@ namespace sitespeed
         CookieWebClient _webClient;
         Uri _uri;
         Stopwatch _stopwatch;
-        int _count = 0;
-        public Dictionary<int, string> Timing { get; set; }
+        public int Count { get; set; }
+        public Dictionary<string, string> Timing { get; set; }
         public List<string> Xmls { get; set; }
 
         public Worker(Uri uri)
         {
             this._webClient = new CookieWebClient();
-            this.Timing = new Dictionary<int, string>();
+            this.Timing = new Dictionary<string, string>();
             this.Xmls = new List<string>();
             this._stopwatch = new Stopwatch();
             this._uri = uri;
+            this.Count = 0;
         }
 
         string GetTimeFormat(Stopwatch st)
@@ -42,7 +43,7 @@ namespace sitespeed
             byte[] data = this._webClient.DownloadData(url);
 
             this._stopwatch.Stop();
-            Timing.Add(_count++, this.GetTimeFormat(this._stopwatch));
+            Timing.Add(url, this.GetTimeFormat(this._stopwatch));
             return data;
         }
         string GetRequstFile(string url)
@@ -176,7 +177,17 @@ namespace sitespeed
                 throw;
             }
         }
+        public List<KeyValuePair<string, string>> GetSortedList()
+        {
+            List<KeyValuePair<string, string>> sortList = this.Timing.ToList();
 
+            sortList.Sort( delegate (KeyValuePair<string, string> pair1, KeyValuePair<string, string> pair2)
+                {
+                    return pair1.Value.CompareTo(pair2.Value);
+                }
+            );
+            return sortList;
+        }
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 

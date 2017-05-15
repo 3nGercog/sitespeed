@@ -7,6 +7,7 @@ namespace sitespeed.Models
 {
     public class History
     {
+        public string UrlHost { get; set; }
         public SitemapNode SiteNode { get; set; }
         public string Time { get; set; }
         public int Number { get; set; }
