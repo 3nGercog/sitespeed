@@ -10,6 +10,7 @@ using System.Text;
 using System.Web;
 using System.Xml;
 using System.Xml.Linq;
+using HtmlAgilityPack;
 
 namespace sitespeed
 {
@@ -18,18 +19,21 @@ namespace sitespeed
         CookieWebClient _webClient;
         Uri _uri;
         Stopwatch _stopwatch;
-        public int Count { get; set; }
+        int Count { get; set; }
         public Dictionary<string, string> Timing { get; set; }
+        public Dictionary<int, string> Queue { get; set; }
         public List<string> Xmls { get; set; }
-
+        List<string> _urls;
         public Worker(Uri uri)
         {
             this._webClient = new CookieWebClient();
             this.Timing = new Dictionary<string, string>();
+            this.Queue = new Dictionary<int, string>();
             this.Xmls = new List<string>();
             this._stopwatch = new Stopwatch();
             this._uri = uri;
             this.Count = 0;
+            this._urls = new List<string>();
         }
 
         string GetTimeFormat(Stopwatch st)
@@ -43,7 +47,20 @@ namespace sitespeed
             byte[] data = this._webClient.DownloadData(url);
 
             this._stopwatch.Stop();
-            Timing.Add(url, this.GetTimeFormat(this._stopwatch));
+            this.Timing.Add(url, this.GetTimeFormat(this._stopwatch));
+            this.Queue.Add(Count++, url);
+            return data;
+        }
+        HtmlAgilityPack.HtmlDocument GetHtmlDocumentWithRequst(string url)
+        {
+            HtmlWeb hw = new HtmlWeb();
+            this._stopwatch.Start();
+
+            HtmlAgilityPack.HtmlDocument data = hw.Load(url);
+
+            this._stopwatch.Stop();
+            this.Timing.Add(url, this.GetTimeFormat(this._stopwatch));
+            this.Queue.Add(Count++, url);
             return data;
         }
         string GetRequstFile(string url)
@@ -81,12 +98,22 @@ namespace sitespeed
             XDocument document = new XDocument(root);
             return document.ToString();
         }
+
+
+        string GetHostUrl(Uri uri)
+        {
+            return string.Format("{0}://{1}", uri.Scheme, uri.Host);
+        }
+        string GetHostUrl(Uri uri, string path)
+        {
+            return string.Format("{0}://{1}/{2}", uri.Scheme, uri.Host, path);
+        }
         public void Work()
         {
             try
             {
                 //robots.txt
-                string fUrl = string.Format("{0}://{1}/robots.txt", _uri.Scheme, _uri.Host);
+                string fUrl = this.GetHostUrl(this._uri, "robots.txt");
 
                 byte[] data = this.GetRequst(fUrl);
 
@@ -154,7 +181,7 @@ namespace sitespeed
                 }
                 else
                 {
-                    fUrl = string.Format("{0}://{1}/sitemap.xml", _uri.Scheme, _uri.Host);
+                    fUrl = this.GetHostUrl(this._uri, "sitemap.xml");
 
                     data = this.GetRequst(fUrl);
                     res = Encoding.UTF8.GetString(data);
@@ -188,6 +215,91 @@ namespace sitespeed
             );
             return sortList;
         }
+        public void ParseUrl()
+        {
+            string stU = this.GetHostUrl(this._uri);
+            this.AddUrlList(stU);
+            this.LoadAndAddAllUrls(this._urls);
+        }
+
+        void AddUrlList(string url)
+        {
+            HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
+            doc = this.GetHtmlDocumentWithRequst(url);
+            Uri hrefs; Uri h = new Uri(url);
+            foreach (HtmlNode link in doc.DocumentNode.SelectNodes("//a[@href]"))
+            {
+                // Get the value of the HREF attribute
+                string hrefValue = link.GetAttributeValue("href", string.Empty);
+                if (string.IsNullOrEmpty(hrefValue))
+                {
+                    continue;
+                }
+                bool result = Uri.TryCreate(hrefValue, UriKind.Absolute, out hrefs)
+                    && (hrefs.Scheme == Uri.UriSchemeHttp || hrefs.Scheme == Uri.UriSchemeHttps);
+                if (result)
+                {
+                    var loadsHrefs = this.GetHostUrl(hrefs);
+                    if (loadsHrefs.Contains(h.Host))
+                    {
+                        Debug.Print("----------------Site url " + hrefValue + "   ----------------");
+                        this._urls.Add(hrefValue);
+                    }
+                }
+            }
+        }
+        void LoadAndAddAllUrls(List<string> list)
+        {
+            if(list.Count == 0)
+            {
+                return;
+            }
+            HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
+            List<string> tempUrls = new List<string>();
+            Uri hrefs; Uri litems; string hrefValue = "";
+            foreach (var item in list)
+            {
+                try
+                {
+                    doc = this.GetHtmlDocumentWithRequst(item);
+                
+                    foreach (HtmlNode link in doc.DocumentNode.SelectNodes("//a[@href]"))
+                    {
+                        // Get the value of the HREF attribute
+                        hrefValue = link.GetAttributeValue("href", string.Empty);
+                        if (string.IsNullOrEmpty(hrefValue))
+                        {
+                            continue;
+                        }
+
+                        bool result = Uri.TryCreate(hrefValue, UriKind.Absolute, out hrefs)
+                                        && (hrefs.Scheme == Uri.UriSchemeHttp || hrefs.Scheme == Uri.UriSchemeHttps);
+                        litems = new Uri(item);
+                        if (result)
+                        {
+                            var loadsHrefs = this.GetHostUrl(hrefs);
+                            var lItem = this.GetHostUrl(litems);
+                            if (loadsHrefs.Contains(litems.Host) && !this._urls.Contains(hrefValue))
+                            {
+                                Debug.Print("----------------Temp url " + hrefValue + "   ----------------");
+                                tempUrls.Add(hrefValue);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ex = null;
+                    continue;
+                }
+            }
+            if(tempUrls.Count > 0)
+            {
+                this._urls.AddRange(tempUrls);
+                this.LoadAndAddAllUrls(tempUrls);
+            }
+        }
+
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 

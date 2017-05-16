@@ -50,7 +50,7 @@ namespace sitespeed.Controllers
                     history.Add(h);
                 }
             }
-            var grafs = history.GroupBy(h => h.UrlHost).Select(h => new HistoryViewModel() { Url = h.Key, Historys = h.OrderBy(s => s.Time).ToList() }).ToList();
+            var grafs = history.GroupBy(h => h.UrlHost).Select(h => new HistoryViewModel() { Url = h.Key, Historys = h.ToList() }).ToList();
             var tables = history.OrderBy(h => h.UrlHost).ThenBy(h => h.Time).Skip(0).Take(20).ToList();
             ViewData["graf"] = grafs;
             ViewData["table"] = tables;
@@ -103,12 +103,13 @@ namespace sitespeed.Controllers
                 using (Worker w = new Worker(nUrl))
                 {
                     w.Work();
-                    var sortedList = w.GetSortedList();
-                    var count = 0;
-                    foreach (KeyValuePair<string, string> kvp in sortedList)
+                    //var sortedList = w.GetSortedList();
+                    //var count = 0;
+                    foreach (KeyValuePair<string, string> kvp in w.Timing)
                     {
                         var sthist = new History()
                         {
+                            CreateOn = DateTime.Now,
                             UrlHost = url,
                             SiteNode = new SitemapNode()
                             {
@@ -118,7 +119,7 @@ namespace sitespeed.Controllers
                                 Frequency = SitemapFrequency.Always
                             },
                             Time = kvp.Value,
-                            Number = count++
+                            Number = w.Queue.First(q => q.Value == kvp.Key).Key
                         };
                         var str = JsonConvert.SerializeObject(sthist);
                         this.SaveFile(fpath, str);
@@ -129,26 +130,31 @@ namespace sitespeed.Controllers
             catch
             {
                 Uri u = new Uri(collection[0]);
-                var exU = string.Format("{0}://{1}", u.Scheme, u.Host);
-                var time = "";
-                for (int i = 0; i < 5; i++)
+                //parser
+                using (Worker w = new Worker(u))
                 {
-                    time = this.CalcSpeed(exU);
-                    var sthist = new History()
+                    w.ParseUrl();
+                    //var sortedList = w.GetSortedList();
+                    //var count = 0;
+                    foreach (KeyValuePair<string, string> kvp in w.Timing)
                     {
-                        UrlHost = exU,
-                        SiteNode = new SitemapNode()
+                        var sthist = new History()
                         {
-                            Url = exU,
-                            Priority = 1,
-                            LastModified = DateTime.Now,
-                            Frequency = SitemapFrequency.Always
-                        },
-                        Time = time,
-                        Number = i
-                    };
-                    var str = JsonConvert.SerializeObject(sthist);
-                    this.SaveFile(fpath, str);
+                            CreateOn = DateTime.Now,
+                            UrlHost = collection[0],
+                            SiteNode = new SitemapNode()
+                            {
+                                Url = kvp.Key,
+                                Priority = 1,
+                                LastModified = DateTime.Now,
+                                Frequency = SitemapFrequency.Always
+                            },
+                            Time = kvp.Value,
+                            Number = w.Queue.First(q => q.Value == kvp.Key).Key
+                        };
+                        var str = JsonConvert.SerializeObject(sthist);
+                        this.SaveFile(fpath, str);
+                    }
                 }
                 return RedirectToAction("Index");
             }
