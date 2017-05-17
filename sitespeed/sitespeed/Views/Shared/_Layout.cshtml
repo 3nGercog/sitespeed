@@ -85,7 +85,7 @@
             var ind = 0;
             var colS = arr.length / 5;
             var res;
-            var sortArr = []; var name;
+            var sortArr = []; var name; var repTime;
             for (var a = 0; a < arr.length; a++) {
                 res = arr[a].Historys;
                 var col; var b; var ot; var p;
@@ -94,7 +94,8 @@
                     $.each(res, function(ind, val){
                         $.each(res, function(i,v){
                             if(val.Number === v.Number){
-                                sortArr.push(parseFloat(v.Time));
+                                repTime = v.Time.replace(',', '.');
+                                sortArr.push(parseFloat(repTime));
                                 name = v.UrlHost;
                             }
                         });

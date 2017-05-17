@@ -38,7 +38,8 @@ namespace sitespeed
 
         string GetTimeFormat(Stopwatch st)
         {
-            return String.Format("{0}.{1}", st.Elapsed.Seconds.ToString(), st.Elapsed.Milliseconds.ToString());
+            TimeSpan ts = st.Elapsed;
+            return String.Format("{0},{1}", ts.Seconds, ts.Milliseconds / 10);
         }
         byte[] GetRequst(string url)
         {
@@ -49,6 +50,7 @@ namespace sitespeed
             this._stopwatch.Stop();
             this.Timing.Add(url, this.GetTimeFormat(this._stopwatch));
             this.Queue.Add(Count++, url);
+            this._stopwatch.Reset();
             return data;
         }
         HtmlAgilityPack.HtmlDocument GetHtmlDocumentWithRequst(string url)
@@ -61,6 +63,7 @@ namespace sitespeed
             this._stopwatch.Stop();
             this.Timing.Add(url, this.GetTimeFormat(this._stopwatch));
             this.Queue.Add(Count++, url);
+            this._stopwatch.Reset();
             return data;
         }
         string GetRequstFile(string url)

@@ -32,6 +32,7 @@ namespace sitespeed.Controllers
     public class HomeController : Controller
     {
 
+        CultureInfo daDK = CultureInfo.CreateSpecificCulture("en-US");
         public ActionResult Index()
         {
             List<History> history = new List<History>();
@@ -51,7 +52,7 @@ namespace sitespeed.Controllers
                 }
             }
             var grafs = history.GroupBy(h => h.UrlHost).Select(h => new HistoryViewModel() { Url = h.Key, Historys = h.ToList() }).ToList();
-            var tables = history.OrderBy(h => h.UrlHost).ThenBy(h => h.Time).Skip(0).Take(20).ToList();
+            var tables = history.OrderBy(h => h.UrlHost).ThenBy(h => double.Parse(h.Time)).Skip(0).Take(20).ToList();
             ViewData["graf"] = grafs;
             ViewData["table"] = tables;
             return View();
@@ -76,7 +77,7 @@ namespace sitespeed.Controllers
                     history.Add(h);
                 }
             }
-            var tables = history.OrderBy(h => h.UrlHost).ThenBy(h => h.Time).Skip(startIndex).Take(pageSize).ToList();
+            var tables = history.OrderBy(h => h.UrlHost).ThenBy(h => double.Parse(h.Time)).Skip(startIndex).Take(pageSize).ToList();
             ViewData["table"] = tables;
             //var page = source.Skip(startIndex).Take(pageSize);
             return PartialView("_TableView");
