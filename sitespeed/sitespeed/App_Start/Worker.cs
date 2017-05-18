@@ -289,7 +289,7 @@ namespace sitespeed
                         {
                             var loadsHrefs = this.GetHostUrl(hrefs);
                             var lItem = this.GetHostUrl(litems);
-                            if (hrefs.Host == litems.Host && !this._urls.Contains(hrefValue) && !list.Contains(loadsHrefs))
+                            if (hrefs.Host == litems.Host && !this._urls.Contains(hrefValue) && !tempUrls.Contains(loadsHrefs))
                             {
                                 Debug.Print("----------------Temp absolute url " + hrefValue + "   ----------------");
                                 tempUrls.Add(hrefValue);
@@ -299,7 +299,7 @@ namespace sitespeed
                         {
                             
                             var loadsHrefs = this.GetHostUrl(litems, hrefValue);
-                            if (!this._urls.Contains(loadsHrefs) && !list.Contains(loadsHrefs))
+                            if (!this._urls.Contains(loadsHrefs) && !tempUrls.Contains(loadsHrefs))
                             {
                                 Debug.Print("----------------Temp relative url " + loadsHrefs + "   ----------------");
                                 tempUrls.Add(loadsHrefs);
