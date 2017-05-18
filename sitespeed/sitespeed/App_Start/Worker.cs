@@ -105,7 +105,7 @@ namespace sitespeed
 
         string GetHostUrl(Uri uri)
         {
-            return string.Format("{0}://{1}", uri.Scheme, uri.Host);
+            return string.Format("{0}://{1}/", uri.Scheme, uri.Host);
         }
         string GetHostUrl(Uri uri, string path)
         {
@@ -234,20 +234,27 @@ namespace sitespeed
             {
                 // Get the value of the HREF attribute
                 string hrefValue = link.GetAttributeValue("href", string.Empty);
-                if (string.IsNullOrEmpty(hrefValue))
+                if (string.IsNullOrEmpty(hrefValue) || hrefValue.Contains(".."))
                 {
                     continue;
                 }
                 bool result = Uri.TryCreate(hrefValue, UriKind.Absolute, out hrefs)
                     && (hrefs.Scheme == Uri.UriSchemeHttp || hrefs.Scheme == Uri.UriSchemeHttps);
+                
                 if (result)
                 {
                     var loadsHrefs = this.GetHostUrl(hrefs);
-                    if (loadsHrefs.Contains(h.Host))
+                    if (hrefs.Host == h.Host)
                     {
-                        Debug.Print("----------------Site url " + hrefValue + "   ----------------");
+                        Debug.Print("----------------Site absolute url " + hrefValue + "   ----------------");
                         this._urls.Add(hrefValue);
                     }
+                }
+                else
+                {
+                    var loadsHrefs = this.GetHostUrl(h, hrefValue);
+                    Debug.Print("----------------Site relative url " + loadsHrefs + "   ----------------");
+                    this._urls.Add(loadsHrefs);
                 }
             }
         }
@@ -270,7 +277,7 @@ namespace sitespeed
                     {
                         // Get the value of the HREF attribute
                         hrefValue = link.GetAttributeValue("href", string.Empty);
-                        if (string.IsNullOrEmpty(hrefValue))
+                        if (string.IsNullOrEmpty(hrefValue) || hrefValue.Contains(".."))
                         {
                             continue;
                         }
@@ -282,10 +289,20 @@ namespace sitespeed
                         {
                             var loadsHrefs = this.GetHostUrl(hrefs);
                             var lItem = this.GetHostUrl(litems);
-                            if (loadsHrefs.Contains(litems.Host) && !this._urls.Contains(hrefValue))
+                            if (hrefs.Host == litems.Host && !this._urls.Contains(hrefValue) && !list.Contains(loadsHrefs))
                             {
-                                Debug.Print("----------------Temp url " + hrefValue + "   ----------------");
+                                Debug.Print("----------------Temp absolute url " + hrefValue + "   ----------------");
                                 tempUrls.Add(hrefValue);
+                            }
+                        }
+                        else
+                        {
+                            
+                            var loadsHrefs = this.GetHostUrl(litems, hrefValue);
+                            if (!this._urls.Contains(loadsHrefs) && !list.Contains(loadsHrefs))
+                            {
+                                Debug.Print("----------------Temp relative url " + loadsHrefs + "   ----------------");
+                                tempUrls.Add(loadsHrefs);
                             }
                         }
                     }

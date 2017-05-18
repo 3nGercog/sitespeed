@@ -19,7 +19,7 @@ namespace sitespeed
                 defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional }
             );
             routes.MapRoute("Next", "Next/{query}/{startIndex}",
-                        new { controller = "Home", action = "Next", startIndex = 0, pageSize = 20 });
+                        new { controller = "Home", action = "Next", startIndex = 0, pageSize = 40 });
         }
     }
 }

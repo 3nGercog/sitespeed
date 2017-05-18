@@ -21,9 +21,9 @@
         }
 
     }
-    @for (int i = 0; i < allCount; i = i + 20)
+    @for (int i = 0; i < allCount; i = i + 40)
     {
-        <li>@Ajax.ActionLink(count++.ToString(), "Next",new { query = "next", startIndex = i, pageSize = 20 }, new AjaxOptions { HttpMethod = "POST", InsertionMode = InsertionMode.Replace, UpdateTargetId = "urltable" })</li>
+        <li>@Ajax.ActionLink(count++.ToString(), "Next",new { query = "next", startIndex = i, pageSize = 40 }, new AjaxOptions { HttpMethod = "POST", InsertionMode = InsertionMode.Replace, UpdateTargetId = "urltable" })</li>
     }
     
 </ul>
